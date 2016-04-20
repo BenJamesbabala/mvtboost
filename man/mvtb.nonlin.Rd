@@ -4,14 +4,14 @@
 \alias{mvtb.nonlin}
 \title{Detect departures from linearity from a multivariate tree boosting model.}
 \usage{
-mvtb.nonlin(object, X, Y, n.trees = NULL, detect = "grid", scale = TRUE)
+mvtb.nonlin(object, Y, X, n.trees = NULL, detect = "grid", scale = TRUE)
 }
 \arguments{
 \item{object}{object of class \code{mvtb}}
 
-\item{X}{matrix of predictors}
+\item{Y}{matrix of predictors}
 
-\item{Y}{matrix of responses}
+\item{X}{matrix of responses}
 
 \item{n.trees}{number of trees. Defaults to the minimum number of trees given that minimize CV, test, training error.}
 
@@ -42,7 +42,7 @@ A final option is to use \code{gbm::interact.gbm} from the \code{gbm} package to
 These methods are not necessarily overlapping, and can produce different results. We suggest using several approaches, followed by plotting the model implied effects of the two predictors.
 }
 \references{
-Miller P.J., Lubke G.H, McArtor D.B., Bergeman C.S. (Submitted) Finding structure in data: A data mining alternative to multivariate multiple regression. Psychological Methods.
+Miller P.J., Lubke G.H, McArtor D.B., Bergeman C.S. (2016) Finding structure in data using multivariate tree boosting. Psychological Methods.
 
 Elith, J., Leathwick, J. R., & Hastie, T. (2008). A working guide to boosted regression trees. Journal of Animal Ecology, 77(4), 802-813.
 

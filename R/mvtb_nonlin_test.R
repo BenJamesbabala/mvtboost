@@ -1,23 +1,3 @@
-
-
-## n <- 1000
-## set.seed(n)
-## x <- rnorm(n)
-## x2 <- rnorm(n)
-## x3 <- rnorm(n)
-## x4 <- rnorm(n)
-## e <- rnorm(n)
-## y <- x*x2-x3*x4 + e
-## y2 <- x3*x2-x4*x+e
-## X <- data.frame(x=x,x2=x2,x3=x3,x4=x4)
-## Y <- data.frame(y=y,y2=y2)
-## d <- data.frame(y=y,y2=y2,x=x,x2=x2,x3=x3,x4=x4)
-
-## out <- mvtb(X=X,Y=Y,niter=1000,shrinkage=.01,interaction.depth=5,bag.frac=1,s=1:nrow(d))
-
-## res <- mvtb.interactions(out=out,X=X,Y=Y,n.trees=out2$gbm.call$best.trees)
-## res[[1]]
-
 #' Detect departures from linearity from a multivariate tree boosting model.
 #' @param object object of class \code{mvtb}
 #' @param Y matrix of predictors
@@ -42,7 +22,7 @@
 #' These methods are not necessarily overlapping, and can produce different results. We suggest using several approaches, followed by plotting the model implied effects of the two predictors.
 #' @seealso \code{interact.gbm}, \code{mvtb.perspec}, \code{plot.gbm}
 #' @references 
-#' Miller P.J., Lubke G.H, McArtor D.B., Bergeman C.S. (Submitted) Finding structure in data: A data mining alternative to multivariate multiple regression. Psychological Methods.
+#' Miller P.J., Lubke G.H, McArtor D.B., Bergeman C.S. (2016) Finding structure in data using multivariate tree boosting. Psychological Methods.
 #' 
 #' Elith, J., Leathwick, J. R., & Hastie, T. (2008). A working guide to boosted regression trees. Journal of Animal Ecology, 77(4), 802-813.
 #' 
@@ -52,22 +32,21 @@ mvtb.nonlin <-function(object, Y, X, n.trees=NULL,detect="grid",scale=TRUE) {
   #
   # p. miller, February 2015. Updated for multiple outcome variables
   # j. leathwick, j. elith - May 2007
-  out <- object
-  if(any(unlist(lapply(out,function(li){is.raw(li)})))){
-    out <- mvtb.uncomp(out)
+  if(any(unlist(lapply(object,function(li){is.raw(li)})))){
+    object <- mvtb.uncomp(object)
   }
-  if(is.null(n.trees)) { n.trees <- min(unlist(out$best.trees)) }
+  if(is.null(n.trees)) { n.trees <- min(unlist(object$best.trees)) }
   data <- X
   n.preds <- ncol(data)
   if(!is.null(colnames(data))) { 
     pred.names <- colnames(data)
   } else {
-    pred.names <- out$models[[1]]$var.names
+    pred.names <- object$models[[1]]$var.names
   }
   if(!is.null(colnames(Y))){
     col.names <- colnames(Y)
   } else {
-    col.names <- out$ynames
+    col.names <- object$ynames
   }
   Y <- as.matrix(Y)
   
@@ -79,13 +58,13 @@ mvtb.nonlin <-function(object, Y, X, n.trees=NULL,detect="grid",scale=TRUE) {
     detect.function <- 2
   }
   
-  doone <- function(which.y,mvtb.out,detect.function=1,data=data,n.preds=n.preds,pred.names=pred.names,n.trees=n.trees,scale=scale) {
+  doone <- function(which.y,object,detect.function=1,data=data,n.preds=n.preds,pred.names=pred.names,n.trees=n.trees,scale=scale) {
     if(detect.function==1) {
-      cross.tab <- intx.grid(mvtb.out,num.pred=n.preds,k=which.y, n.trees=n.trees)
+      cross.tab <- intx.grid(object,num.pred=n.preds,k=which.y, n.trees=n.trees)
     } else if (detect.function==2) {
-      cross.tab <- intx.lm(mvtb.out,n.trees=n.trees,which.y=which.y,data=data,n.preds=n.preds,pred.names=pred.names)
+      cross.tab <- intx.lm(object,n.trees=n.trees,which.y=which.y,data=data,n.preds=n.preds,pred.names=pred.names)
     } else {
-      cross.tab <- intx.influence(mvtb.out,k=which.y,n.trees=n.trees,scale=scale)
+      cross.tab <- intx.influence(object,k=which.y,n.trees=n.trees,scale=scale)
     }
     dimnames(cross.tab) <- list(pred.names,pred.names)
     
@@ -118,15 +97,15 @@ mvtb.nonlin <-function(object, Y, X, n.trees=NULL,detect="grid",scale=TRUE) {
     return(list(rank.list = rank.list, nonlin.full = cross.tab))
   }
   
-  res <- lapply(1:ncol(Y),doone,mvtb.out=out,detect.function=detect.function,n.trees=n.trees,pred.names=pred.names,n.preds=n.preds,data=data,scale=scale)
+  res <- lapply(1:ncol(Y),doone,object=object,detect.function=detect.function,n.trees=n.trees,pred.names=pred.names,n.preds=n.preds,data=data,scale=scale)
   names(res) <- colnames(Y)
   return(res)
 }
 
 #' @importFrom stats residuals resid lm
-intx.grid <- function(mvtb.out,num.pred,k=1,n.trees) {
-  #gbm.obj <- convert.mvtb.gbm(r=mvtb.out,k=k)
-  gbm.obj <- mvtb.out$models[[k]]
+intx.grid <- function(object,num.pred,k=1,n.trees) {
+  #gbm.obj <- convert.mvtb.gbm(r=object,k=k)
+  gbm.obj <- object$models[[k]]
   cross.tab <- matrix(0,num.pred,num.pred)
   #dimnames(cross.tab) <- list(pred.names,pred.names)
   for(i in 1:(num.pred-1)) {
@@ -153,7 +132,7 @@ intx.grid <- function(mvtb.out,num.pred,k=1,n.trees) {
 }
 
 #' @importFrom stats residuals resid lm
-intx.lm <- function (out,n.trees,which.y,data,n.preds,pred.names) {
+intx.lm <- function (object,n.trees,which.y,data,n.preds,pred.names) {
   cross.tab <- matrix(0,n.preds,n.preds)
   for (i in 1:(n.preds - 1)) {  # step through the predictor set
     if (is.vector(data[,i])) {  # create a sequence through the range
@@ -189,7 +168,7 @@ intx.lm <- function (out,n.trees,which.y,data,n.preds,pred.names) {
         }
       }        
       ## form the prediction
-      prediction <- predict.mvtb(out,newdata=data.frame(pred.frame),n.trees = n.trees,drop=FALSE)[,which.y,]
+      prediction <- predict.mvtb(object,newdata=data.frame(pred.frame),n.trees = n.trees,drop=FALSE)[,which.y,]
       interaction.test.model <- lm(prediction ~ as.factor(pred.frame[,1]) + as.factor(pred.frame[,2]))             
       interaction.flag <- round(mean(resid(interaction.test.model)^2)*1000,2)
       cross.tab[i,j] <- interaction.flag

@@ -9,15 +9,14 @@
 #' @return Matrix of (relative) influences.
 #' @export 
 mvtb.ri <- function(object,n.trees=NULL,relative="col",...){
-  out <- object
-  if(any(unlist(lapply(out,function(li){is.raw(li)})))){
-    out <- mvtb.uncomp(out)
+  if(any(unlist(lapply(object,function(li){is.raw(li)})))){
+    object <- mvtb.uncomp(object)
   }
-  if(is.null(n.trees)) { n.trees <- min(unlist(out$best.trees)) }
-  k <- length(out$models)
-  ri <- matrix(0,nrow=length(out$xnames),ncol=k)
+  if(is.null(n.trees)) { n.trees <- min(unlist(object$best.trees)) }
+  k <- length(object$models)
+  ri <- matrix(0,nrow=length(object$xnames),ncol=k)
   for(i in 1:k) {
-    gbm.obj <- out$models[[i]]
+    gbm.obj <- object$models[[i]]
     ri[,i] <- gbm::relative.influence(gbm.obj,n.trees=n.trees,...)
   }
   if(relative == "col"){
@@ -25,17 +24,16 @@ mvtb.ri <- function(object,n.trees=NULL,relative="col",...){
   } else if (relative=="tot") {
     ri <- ri/sum(ri)*100
   }
-  colnames(ri) <- out$ynames
-  rownames(ri) <- out$xnames
+  colnames(ri) <- object$ynames
+  rownames(ri) <- object$xnames
   return(ri)  
 }
 
 
 #' @importFrom stats var
 mvtb.r2 <- function(object,Y,X,n.trees=NULL){
-  out <- object
-  if(is.null(n.trees)) { n.trees <- out$best.iter[[2]] }
-  p <- predict.mvtb(out,n.trees,newdata=X)
+  if(is.null(n.trees)) { n.trees <- object$best.iter[[2]] }
+  p <- predict.mvtb(object,n.trees,newdata=X)
   1-apply(Y - p,2,var)/apply(Y,2,var)
 }
 
@@ -62,12 +60,11 @@ print.mvtb <- function(x,...) {
 #' @seealso \code{mvtb.ri}, \code{gbm.ri}, \code{mvtb.cluster}
 #' @export
 summary.mvtb <- function(object,print=TRUE,n.trees=NULL,relative="col") {
-  out <- object
-  if(any(unlist(lapply(out,function(li){is.raw(li)})))){
-    out <- mvtb.uncomp(out)
+  if(any(unlist(lapply(object,function(li){is.raw(li)})))){
+    object <- mvtb.uncomp(object)
   }
-  if(is.null(n.trees)) { n.trees <- min(unlist(out$best.trees)) }
-  ri <- mvtb.ri(out,n.trees=n.trees,relative=relative)
+  if(is.null(n.trees)) { n.trees <- min(unlist(object$best.trees)) }
+  ri <- mvtb.ri(object,n.trees=n.trees,relative=relative)
   sum <- list(best.trees=n.trees,relative.influence=ri)
   if(print){ print(lapply(sum,function(o){round(o,2)})) }
   invisible(sum)

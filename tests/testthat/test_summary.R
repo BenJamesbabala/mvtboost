@@ -16,7 +16,7 @@ Y <- Xf %*% B + E
 p <- 3
 ncovs <- 10
 q <- 4
-out <- mvtb(Y=Y,X=X,shrinkage=.1,n.trees=100)
+out <- mvtb(Y=Y,X=X,shrinkage=.1,n.trees=100,pc=F)
 
 test_that("summary",{ 
   ## Again, tests just to make sure that they run

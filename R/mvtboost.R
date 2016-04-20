@@ -124,6 +124,7 @@ mvtb <- function(Y,X,n.trees=100,
                  distribution="gaussian",
                  train.fraction=1,
                  bag.fraction=1,
+                 pc=FALSE,
                  cv.folds=1,
                  s=NULL,
                  seednum=NULL,
@@ -165,6 +166,12 @@ mvtb <- function(Y,X,n.trees=100,
   ## Iterations
   trainerr <- testerr <- vector(length=n.trees)
   
+  ev <- NULL
+  if(pc){
+    ev <- eigen(cov(Y))
+    Y <- Y %*% ev$vectors
+  }
+  
   ## 0. CV?
   if(cv.folds > 1) {
     ocv <- mvtbCV(Y=Y,X=X, cv.folds=cv.folds, s=s, save.cv=save.cv, mc.cores=mc.cores,
@@ -191,13 +198,13 @@ mvtb <- function(Y,X,n.trees=100,
 
   if(!save.cv){ocv <- NULL}
   if(iter.details==T){
-    fl <- list(models=models, best.trees=best.trees,params=params,
+    fl <- list(models=models, best.trees=best.trees,params=params,ev=ev,
              trainerr=trainerr,testerr=testerr,cv.err=cv.err,
              ocv=ocv,
-             s=s,n=nrow(X),xnames=colnames(X),ynames=colnames(Y))
+             s=s,n=nrow(X),xnames=xnames,ynames=ynames)
   } else {
-    fl <- list(models=models, best.trees=best.trees,params=params,
-               s=s,ocv=ocv,n=nrow(X),xnames=colnames(X),ynames=colnames(Y))
+    fl <- list(models=models, best.trees=best.trees,params=params,ev=ev,
+               s=s,ocv=ocv,n=nrow(X),xnames=xnames,ynames=ynames)
   }
   if(compress) {
     # compress each element using bzip2
@@ -320,30 +327,37 @@ mvtbCV <- function(Y, X, n.trees, cv.folds, save.cv, s, mc.cores, ...) {
 #' @param newdata matrix of predictors. 
 #' @param n.trees number of trees. If a vector, returns predictions in an array. Defaults to the minimum number of trees by CV, test, or training error
 #' @param drop \code{TRUE/FALSE} Drop any dimensions of length 1
+#' @param ... unused
 #' @return Returns an (array, matrix, vector) of predictions for all outcomes. The third dimension corresponds to the 
 #' predictions at a given number of trees, the second dimension corresponds to the number of outcomes.
 #' @export
 #' 
-predict.mvtb <- function(object, n.trees=NULL, newdata, drop=TRUE) {
-  out <- object
-  if(any(unlist(lapply(out,function(li){is.raw(li)})))){
-    out <- mvtb.uncomp(out)
+predict.mvtb <- function(object, n.trees=NULL, newdata, drop=TRUE, ...) {
+  
+  if(any(unlist(lapply(object,function(li){is.raw(li)})))){
+    object <- mvtb.uncomp(object)
   }
-  if(is.null(n.trees)) { n.trees <- min(unlist(out$best.trees)) }
-  K <- length(out$models)
+  if(is.null(n.trees)) { n.trees <- min(unlist(object$best.trees)) }
+  
+  K <- length(object$models)
   treedim <- ifelse(length(n.trees) > 1,max(n.trees),1)
   Pred <- array(0,dim=c(nrow(newdata),K,treedim))  
   for(k in 1:K) {                                     
     p <- rep(0,nrow(newdata))        
-    p <- gbm::predict.gbm(out$models[[k]],n.trees=n.trees,newdata=newdata)    
+    p <- gbm::predict.gbm(object$models[[k]],n.trees=n.trees,newdata=newdata)  
+    
     Pred[,k,] <- p
   }
   #if(length(n.trees) == 1) {
   #  Pred <- drop(Pred)
   #}
+  if(!is.null(object$ev)){
+    Pred  <- apply(Pred,3,function(x,v){x %*% object$ev$vectors})
+  }
   if(drop){
     Pred <- drop(Pred)
   }
+  
   return(Pred)
 }
 

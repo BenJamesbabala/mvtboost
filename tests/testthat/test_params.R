@@ -44,12 +44,12 @@ test_that("compress", {
   r <- mvtb(X=X,Y=Y,n.trees=5, train.fraction=.5, bag.fraction=.5,s=1:500,seednum=8, compress=FALSE)
   expect_true(all(!(unlist(lapply(r,class)) %in% "raw"))) # none of the objects are raw
   r <- mvtb(X=X,Y=Y,n.trees=5, train.fraction=.5, bag.fraction=.5,s=1:500,seednum=8, compress=TRUE)
-  expect_equal_to_reference(unlist(lapply(r,class)),"raw") # all of the objects are raw
+  expect_true(all(unlist(lapply(r,class)) == "raw")) # all of the objects are raw
   r <- mvtb(X=X,Y=Y,n.trees=5, train.fraction=.5, bag.fraction=.5,s=1:500,seednum=8, compress=FALSE, cv.folds=3, save.cv=T)
   expect_true(all(!(unlist(lapply(r,class)) %in% "raw"))) # none of the objects are raw
   expect_true(all(!(unlist(lapply(r$ocv,class)) %in% "raw"))) # none of the cv objects are raw
   r1 <- mvtb(X=X,Y=Y,n.trees=5, train.fraction=.5, bag.fraction=.5,s=1:500,seednum=8, compress=TRUE, cv.folds=3, save.cv=T)
-  expect_equal_to_reference(unlist(lapply(r1,class)),"raw") # all of the objects are raw
+  expect_true(all(unlist(lapply(r1,class)) == "raw")) # all of the objects are raw
   expect_equal(class(r1$ocv),"raw") # the ocv object is raw
   expect_lt(object.size(r1), object.size(r)) # just verify that the object sizes are as they should be
 })
@@ -70,7 +70,7 @@ expect_length(r$trainerr, r$best.trees$last)
 expect_length(r$cv.err, r$best.trees$last)
 
 r <- mvtb(X=X,Y=Y,n.trees=5, seednum=8, compress=FALSE, cv.folds=3, save.cv=F, iter.details = F)
-expect_named(r,c("models", "best.trees", "params", "s", "ocv", "n", "xnames", "ynames"))
+expect_named(r,c("models", "best.trees", "params", "ev", "s", "ocv", "n", "xnames", "ynames"))
 expect_null(r$ocv)
 r <- mvtb(X=X,Y=Y,n.trees=5, seednum=8, compress=FALSE, cv.folds=3, save.cv=T, iter.details = F)
 })
