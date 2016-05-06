@@ -352,7 +352,8 @@ predict.mvtb <- function(object, n.trees=NULL, newdata, drop=TRUE, ...) {
   #  Pred <- drop(Pred)
   #}
   if(!is.null(object$ev)){
-    Pred  <- apply(Pred,3,function(x,v){x %*% object$ev$vectors})
+    Pred <- drop(Pred) # this needs to be fixed later...
+    Pred  <- Pred %*% t(object$ev$vectors)
   }
   if(drop){
     Pred <- drop(Pred)
